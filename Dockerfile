@@ -6,9 +6,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 
-RUN cd /svelte && npm install && npm run build
+RUN cd svelte && npm install && npm run build
 
-CMD ['python', '-m', 'server']
+CMD ["python", "-m", "server"]

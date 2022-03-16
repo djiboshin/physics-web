@@ -1,6 +1,6 @@
 from aiohttp import web
 import pathlib
-from routes import routes
+from .routes import routes
 import aiohttp_jinja2
 import jinja2
 
