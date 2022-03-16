@@ -11,4 +11,6 @@ RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkh
 RUN apt install fonts-liberation
 RUN cd svelte && npm install && npm run build
 
+EXPOSE 9565
+
 CMD ["python", "-m", "server"]
