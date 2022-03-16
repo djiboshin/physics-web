@@ -8,7 +8,7 @@ import pdfkit
 import imgkit
 import pathlib
 from urllib.parse import urljoin
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader
 
 HOST = 'https://physics.itmo.ru'
 
