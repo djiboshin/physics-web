@@ -1,0 +1,91 @@
+        .main {
+            font-family:  Arial, sans-serif;
+            width: 650px;
+            padding:0;
+            margin: 0 auto;
+            font-size: 18px;
+        }
+        .back {
+            display: grid;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            padding: 4px;
+            background-color: #FFB87E;
+        }
+        .back-friday {
+            margin-top: 4px;
+            min-height: 158px;
+            padding: 4px;
+            background-color: blue;
+            vertical-align: middle;
+        }
+        .sem {
+            background-color: white;
+            margin: 4px;
+            min-height: 158px;
+        }
+        div.info {
+            width: 471px;
+            float:right;
+        }
+        div.info-friday{
+            height: 100%;
+        }
+        div.text-box {
+            display: -webkit-box;
+            -webkit-box-pack: justify;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-direction: row;
+            align-content: center;
+
+            margin-bottom: 20px;
+        }
+        div.photo {
+            padding: 15px 20px 10px 15px;
+            float: left;
+            width: 128px;
+        }
+        img.photo {
+            width: 128px;
+        }
+        .speaker-name {
+            padding-top: 25px;
+            font-weight: 500;
+        }
+        .name {
+            font-size: 20px;
+            font-weight: bold;
+            padding-bottom: 10px;
+            padding-right: 10px;
+        }
+        .date {
+            width: 190px;
+            min-width: 190px;
+            height: 70px;
+        }
+        .datetime {
+            text-align: center;
+            padding: 10px 10px 5px
+        }
+        .weekday {
+            font-size: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .text-friday {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            padding-top: 16px;
+            font-size: 25px;
+            white-space: pre-line;
+        }
+        .photo-friday {
+            max-height: 128px
+        }
+        div.photo-friday {
+            width: auto
+        }
