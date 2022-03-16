@@ -8,7 +8,7 @@ COPY . .
 
 RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
-RUN apt-get install wkhtmltopdf
+RUN apt-get install -y wkhtmltopdf
 
 RUN cd svelte && npm install && npm run build
 
