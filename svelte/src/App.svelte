@@ -51,21 +51,33 @@ import { onMount } from "svelte";
         };
     }
 
+	let a;
+	async function Base64toBlob(b) {
+		return fetch(b).then(r => {return r.blob()})
+	}
+
     onMount (async () => {
         socket = new WebSocket("ws://" + document.location.host + "/ws/render_b64");
         socket.onopen = function(event) {
             UpdatePreview(params);
         };
-        socket.onmessage = function(event) {
-            preview.src = event.data;
+        socket.onmessage = async function(event) {
+			preview.blob = await Base64toBlob(event.data)
+            preview.src = URL.createObjectURL(preview.blob);
         };
     })
     
+	async function Copy () {
+		navigator.clipboard.write(
+			[new ClipboardItem({
+				'image/png': preview.blob
+			})]);
+	}
     
 </script>
 <div class="main">
     <div class="preview">
-        <img bind:this={preview} alt="Loading..." class="preview">
+        <img bind:this={preview} on:load={() => URL.revokeObjectURL(preview.src)} alt="Loading..." class="preview">
     </div>
     <div class="panel">
         <div class="week">
@@ -82,6 +94,7 @@ import { onMount } from "svelte";
             <button class="delete" on:click={() => {file_input.value = ""; UpdateFile()}}>Удалить фото</button>
         </div>
         <button class="submit" on:click={UpdateClick}>Сабмит</button>
+		<button class="copy" on:click={Copy}>Скопировать png</button>
     </div>
 </div>
 

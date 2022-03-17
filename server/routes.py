@@ -25,10 +25,10 @@ def from_data(data: dict, request: web.Request) -> web.Response:
     html = render_html(seminars=get_seminars(week_forward), friday_seminar=friday_seminar)
     if file_type == 'png':
         res = html_to_png(html)
-        return web.Response(body=res, content_type="application/octet-stream")
+        return web.Response(body=res, content_type="image/png")
     elif file_type == 'pdf':
         res = html_to_pdf(html)
-        return web.Response(body=res, content_type="application/octet-stream")
+        return web.Response(body=res, content_type="application/pdf")
     return web.Response(body=html)
 
 
@@ -58,5 +58,5 @@ async def render(request: web.Request) -> web.Response:
 
 @routes.get('/')
 async def main(request: web.Request) -> web.Response:
-    context = {'static_url': '/app'}
+    context = {'static_url': 'app'}
     return aiohttp_jinja2.render_template('svelte_app.html', request, context=context)
