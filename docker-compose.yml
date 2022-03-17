@@ -3,3 +3,5 @@ services:
     build: .
     ports:
       - "9565:9565"
+    dns:
+      - 8.8.8.8
