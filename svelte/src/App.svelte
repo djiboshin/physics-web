@@ -57,7 +57,7 @@ async function Base64toBlob(b) {
 }
 
 onMount (async () => {
-	socket = new WebSocket("ws://" + document.location.host + "/ws/render_b64");
+	socket = new WebSocket("ws://" + document.location.host + document.location.pathname + "ws/render_b64");
 	socket.onopen = function(event) {
 		UpdatePreview(params);
 	};
