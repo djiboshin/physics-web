@@ -9,6 +9,9 @@ import imgkit
 import pathlib
 from urllib.parse import urljoin
 from jinja2 import Environment, FileSystemLoader
+import logging
+
+logger = logging.getLogger(__name__)
 
 HOST = 'https://physics.itmo.ru'
 
