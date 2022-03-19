@@ -8,21 +8,25 @@ import { onMount } from "svelte";
 let isLoading = false;
 let preview;
 let socket;
+
+let file_input;
+let url_input;
+let img_prev;
+
 let week_forward = 1;
-let file_input = null;
 let friday_text = "";
-let friday_photo = null;
+let friday_photo_url = null;
+let friday_photo_file = null;
 
 $: params = {week_forward: week_forward,
 	type: 'png',
 	extra_seminar: {
 		name: friday_text.toString().trim()==''?null:friday_text,
 		background_color: "#022950",
-		photo_src: friday_photo,
+		photo_src: friday_photo_file?friday_photo_file:friday_photo_url,
 		text_color: 'white',
 	}
 };
-
 
 function UpdatePreview(params) {
 	console.log(params);
@@ -30,22 +34,27 @@ function UpdatePreview(params) {
 	socket.send(JSON.stringify(params));
 }
 
-function UpdateClick() {
-	UpdatePreview(params)
+function UpdateFile() {
+	if (file_input.files.length>0) {
+		PhotoToBase64(file_input.files[0]);
+		img_prev.hidden = false
+		img_prev.src = URL.createObjectURL(file_input.files[0])
+	} else {
+		PhotoToBase64(null);
+		img_prev.hidden = true
+	}
 }
 
-function UpdateFile() {
-	if (file_input.files) {
-		PhotoToBase64(file_input.files.length>0?file_input.files[0]:null)
-	}
+function UpdateURL(e) {
+	friday_photo_url = url_input.value
 }
 
 function PhotoToBase64(file) {
 	if (!file) {
-		friday_photo = null
+		friday_photo_file = null
 	} else {
 		let reader = new FileReader();
-		reader.onloadend = () => {friday_photo = reader.result};
+		reader.onloadend = () => {friday_photo_file = reader.result};
 		reader.onerror = () => {console.log(reader.error)};
 		reader.readAsDataURL(file);
 	};
@@ -66,6 +75,20 @@ onMount (async () => {
 		preview.src = URL.createObjectURL(preview.blob);
 		isLoading = false;
 	};
+	url_input.addEventListener('paste', (event) => {
+		let items = event.clipboardData.items;
+		for (var i = 0; i < items.length; i++) {
+			if (items[i].type.indexOf("image") == -1) continue;
+			event.preventDefault();
+			var blob = items[i].getAsFile();
+			let container = new DataTransfer();
+			container.items.add(blob);
+			file_input.files = container.files;			
+			UpdateFile();
+			break
+		}
+		
+});
 })
 
 async function Copy () {
@@ -78,23 +101,29 @@ async function Copy () {
 </script>
 <div class="main">
     <div class="preview">
-        <img bind:this={preview} on:load={() => URL.revokeObjectURL(preview.src)} alt="Loading..." class="preview" style="opacity: {isLoading?0.2:1}">
+        <img bind:this={preview} on:load={() => URL.revokeObjectURL(preview.src)} alt="{isLoading?'Loading...':'ERROR'}" class="preview" style="opacity: {isLoading?0.2:1}">
     </div>
     <div class="panel">
         <div class="week">
-            <label for="week_forward">week_forward</label><br>
+            <label for="week_forward"><h3>week_forward</h3></label>
             <input type="number" name="week_forward" min="-10" max="10" bind:value={week_forward}>
         </div>
         <div class="text">
-            <label for="fr_name">Текст</label><br>
+            <label for="fr_name"><h3>Текст</h3></label>
             <textarea name="fr_name" bind:value={friday_text}></textarea>
         </div>
         <div class="photo">
-            <label for="fr_photo">Фото</label><br>
-            <input class="file_input" type="file" accept="image/*" name="fr_photo" bind:this={file_input} on:change={UpdateFile}>
-            <button class="delete" on:click={() => {file_input.value = ""; UpdateFile()}}>Удалить фото</button>
+			<h3>Фото</h3>
+
+			<label for="fr_photo_url">URL или вставить фото</label>
+			<input type="url" name="fr_photo_url" class="url_input" bind:this={url_input} on:change={UpdateURL}>
+
+            <label for="fr_photo_url">Файл</label>
+			<input class="file_input" type="file" accept="image/*" name="fr_photo_file" bind:this={file_input} on:change={UpdateFile}>
+			<img class="img_prev" alt="файл" bind:this={img_prev} hidden>
+            <button class="delete" on:click={() => {file_input.value = ""; UpdateFile()}}>Удалить файл</button>
         </div>
-        <button class="submit" disabled={isLoading} on:click={UpdateClick}>Сабмит</button>
+        <button class="submit" disabled={isLoading} on:click={() => UpdatePreview(params)}>Сабмит</button>
 		<button class="copy" on:click={Copy}>Скопировать png</button>
     </div>
 </div>
@@ -136,6 +165,18 @@ async function Copy () {
     }
 	.file_input {
 		width: 100%;
+	}
+	.url_input {
+		width: 100%;
+	}
+	.url_input:invalid {
+		background-color: red;
+	}
+	.url_input:valid {
+		background-color: white;
+	}
+	.img_prev{
+		height: 50px;
 	}
     .photo {
         margin-bottom: 10px;

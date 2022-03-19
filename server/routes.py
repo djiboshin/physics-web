@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import aiohttp_jinja2
 from aiohttp import web
@@ -22,12 +23,31 @@ def from_data(data: dict, request: web.Request) -> web.Response:
     extra_seminar = data.get('extra_seminar')
     friday_seminar = Seminar(**extra_seminar) if isinstance(extra_seminar, dict) else Seminar()
 
-    html = render_html(seminars=get_seminars(week_forward), friday_seminar=friday_seminar)
+    try:
+        seminars = get_seminars(week_forward)
+    except Exception as e:
+        logging.error(e)
+        seminars = []
+
+    try:
+        html = render_html(seminars=seminars, friday_seminar=friday_seminar)
+    except Exception as e:
+        logging.error(e)
+        html = render_html(seminars=seminars, friday_seminar=Seminar())
+
     if file_type == 'png':
-        res = html_to_png(html)
+        try:
+            res = html_to_png(html)
+        except Exception as e:
+            logging.error(e)
+            res = b""
         return web.Response(body=res, content_type="image/png")
     elif file_type == 'pdf':
-        res = html_to_pdf(html)
+        try:
+            res = html_to_pdf(html)
+        except Exception as e:
+            logging.error(e)
+            res = b""
         return web.Response(body=res, content_type="application/pdf")
     return web.Response(body=html)
 
