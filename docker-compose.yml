@@ -1,6 +1,6 @@
 services:
   web:
-    image: web:dev3
+    image: web:dev4
     build: .
     ports:
       - "9565:9565"

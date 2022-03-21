@@ -13,7 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-HOST = 'https://physics.itmo.ru'
+HOST = 'http://physics.itmo.ru'
 
 color_table = {
     "Microwave seminar": "#e9ad56",
