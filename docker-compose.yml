@@ -1,8 +1,8 @@
 services:
   web:
-    image: web:dev4
+    image: web:dev5
     build: .
     ports:
       - "9565:9565"
     dns:
-      - 8.8.8.8
+      - 77.88.8.8
