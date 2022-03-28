@@ -1,16 +1,22 @@
 <div class="main">
 <div class="back">
 {% for seminar in seminars %}
-<div class="sem" style="background-color:{{seminar.background_color}}">
+<div class="sem" style="background-color:{{seminar.background_color}};{{'height:auto;min-height:10px' if seminar.is_special  else ''}}">
+    {% if seminar.photo_src is not none %}
     <div class="photo">
         <img src="{{seminar.photo_src}}" class="photo">
     </div>
-    <div class="info">
+    {% endif %}
+    <div class="info" style="{{'' if seminar.photo_src is not none else 'width:100%;float:none;'}}">
+        {% if (seminar.speaker_name is not none) or (seminar.datetime is not none) %}
         <div class="text-box">
-            <div class="speaker-name">
+            {% if seminar.speaker_name is not none and seminar.speaker_name != "" %}
+            <div class="speaker-name" style="color:{{seminar.text_color}};">
                 {{seminar.speaker_name}}
             </div>
-            <div class="date" style="background-color:{{seminar.date_color}};color:{{seminar.text_color}}">
+            {% endif %}
+            {% if seminar.datetime is not none %}
+            <div class="date" style="background-color:{{seminar.date_color}};color:{{seminar.date_text_color}}">
                    <div class="datetime" style="float: left">
                     {{seminar.datetime.strftime("%d %b %Y")}}
                     </div>
@@ -21,27 +27,19 @@
                     {{seminar.datetime.strftime("%A")}}
                 </div>
             </div>
+            {% endif %}
         </div>
-        <div class="name">
+        {% endif %}
+
+        {% if seminar.is_special %}
+        <div class="name" style="color:{{seminar.text_color}};margin: 0 auto;white-space: pre;text-align: center;padding-top:10px">{{seminar.name}}</div>
+        {% else %}
+        <div class="name" style="color:{{seminar.text_color}};">
             {{seminar.name}}
         </div>
+        {% endif %}
     </div>
 </div>
   {% endfor %}
 </div>
-{% if friday_seminar.name or friday_seminar.photo %}
-<div class="back-friday" style="background-color:{{friday_seminar.background_color|e}}">
-    {% if friday_seminar.photo_src %}
-    <div class="photo photo-friday">
-        <img src="{{friday_seminar.photo_src|e}}" class="photo-friday">
-    </div>
-    {% endif %}
-
-    {% if friday_seminar.name %}
-    <div class="info-friday">
-        <div class="text-friday" style="color:{{friday_seminar.text_color|e}}">{{friday_seminar.name|e}}</div>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
 </div>

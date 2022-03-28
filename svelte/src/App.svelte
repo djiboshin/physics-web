@@ -1,131 +1,168 @@
 <svelte:head>
 	<title>Семинары</title>
 </svelte:head>
-
 <script>
+import { Styles } from 'sveltestrap';
+import Sems from './Sems.svelte';
+import { Button, ButtonGroup, ButtonToolbar} from 'sveltestrap';
+import { Accordion, AccordionItem } from 'sveltestrap';
+import { Form, FormGroup, FormText, Input, Label } from 'sveltestrap';
+import { Card, CardBody } from 'sveltestrap';
+import { Col, Container, Row, CardHeader} from 'sveltestrap';
+import { Collapse} from 'sveltestrap';
+
+
 import { onMount } from "svelte";
+import { seminars, currentWeekNum} from './stores.js';
 
-let isLoading = false;
+
+let nowDate = Date.now()
+$: isLoading = true;
 let preview;
-let socket;
 
-let file_input;
-let url_input;
-let img_prev;
-
-let week_forward = 1;
-let friday_text = "";
-let friday_photo_url = null;
-let friday_photo_file = null;
-
-$: params = {week_forward: week_forward,
-	type: 'png',
-	extra_seminar: {
-		name: friday_text.toString().trim()==''?null:friday_text,
-		background_color: "#022950",
-		photo_src: friday_photo_file?friday_photo_file:friday_photo_url,
-		text_color: 'white',
-	}
-};
-
-function UpdatePreview(params) {
-	console.log(params);
-	isLoading = true;
-	socket.send(JSON.stringify(params));
+async function getSeminars() {
+	return fetch(document.location.pathname + "seminars").then(r => r.json())
 }
 
-function UpdateFile() {
-	if (file_input.files.length>0) {
-		PhotoToBase64(file_input.files[0]);
-		img_prev.hidden = false
-		img_prev.src = URL.createObjectURL(file_input.files[0])
+function addSeminar(seminar, week_forward) {
+	if ($seminars.hasOwnProperty(week_forward)) {
+		$seminars[week_forward] = [...$seminars[week_forward], seminar]
 	} else {
-		PhotoToBase64(null);
-		img_prev.hidden = true
+		$seminars[week_forward] = [seminar]
 	}
 }
 
-function UpdateURL(e) {
-	friday_photo_url = url_input.value
+async function clearWeek(weekNum) {
+	$seminars[weekNum] = []
 }
 
-function PhotoToBase64(file) {
-	if (!file) {
-		friday_photo_file = null
-	} else {
-		let reader = new FileReader();
-		reader.onloadend = () => {friday_photo_file = reader.result};
-		reader.onerror = () => {console.log(reader.error)};
-		reader.readAsDataURL(file);
+async function reloadWeek(weekNum) {
+	await clearWeek(weekNum)
+	let res = await getSeminars()
+	res.forEach(seminar => {
+		let week_forward = Math.floor((new Date(seminar.datetime) - nowDate ) / (7*24*3600*1000))+1
+		if (week_forward == weekNum) {
+			addSeminar(seminar, week_forward)
+		}
+	});
+
+}
+
+function previewReload() {
+	let socket;
+	socket = new WebSocket("ws://" + document.location.host + document.location.pathname + "ws/render_b64");
+	socket.onopen = function(event) {
+		isLoading = true
+		let data = {type: 'png', seminars: $seminars[$currentWeekNum]}
+		console.log(data);
+		socket.send(JSON.stringify(data));
 	};
-}
-
-let a;
-async function Base64toBlob(b) {
-	return fetch(b).then(r => {return r.blob()})
+	socket.onmessage = async function(event) {
+		preview.blob = await fetch(event.data).then(r => {return r.blob()})
+		preview.src = URL.createObjectURL(preview.blob);
+		socket.close()
+		isLoading = false
+	};
+	
 }
 
 onMount (async () => {
-	socket = new WebSocket("ws://" + document.location.host + document.location.pathname + "ws/render_b64");
-	socket.onopen = function(event) {
-		UpdatePreview(params);
-	};
-	socket.onmessage = async function(event) {
-		preview.blob = await Base64toBlob(event.data)
-		preview.src = URL.createObjectURL(preview.blob);
-		isLoading = false;
-	};
-	url_input.addEventListener('paste', (event) => {
-		let items = event.clipboardData.items;
-		for (var i = 0; i < items.length; i++) {
-			if (items[i].type.indexOf("image") == -1) continue;
-			event.preventDefault();
-			var blob = items[i].getAsFile();
-			let container = new DataTransfer();
-			container.items.add(blob);
-			file_input.files = container.files;			
-			UpdateFile();
-			break
-		}
-		
+	let res = await getSeminars()
+	res.forEach(seminar => {
+		let week_forward = Math.floor((new Date(seminar.datetime) - nowDate ) / (7*24*3600*1000))+1
+		addSeminar(seminar, week_forward)
+	});
+	previewReload()
 });
-})
 
-async function Copy () {
-	navigator.clipboard.write(
-		[new ClipboardItem({
-			'image/png': preview.blob
-		})]);
+function prevWeek() {
+	if ($seminars.hasOwnProperty($currentWeekNum-1)) {
+		$currentWeekNum -= 1
+	} else {
+		$seminars[$currentWeekNum-1] = []
+		$currentWeekNum -= 1
+	}
 }
-    
+
+function nextWeek() {
+	if ($seminars.hasOwnProperty($currentWeekNum+1)) {
+		$currentWeekNum += 1
+	} else {
+		$seminars[$currentWeekNum+1] = []
+		$currentWeekNum += 1
+	}
+}
+
+function createSeminar() {
+	let empty_seminar = {
+		name: null,
+		university: null,
+    	speaker_name: null,
+    	type: null,
+    	datetime: null,
+    	photo_src: null,
+    	date_color: "#022950",
+		date_text_color: "#FFFFFF",
+    	background_color: "#022950",
+    	text_color: "#FFFFFF",
+		is_special: true
+	}
+	addSeminar(empty_seminar, $currentWeekNum)
+}
+
+
 </script>
 <div class="main">
-    <div class="preview">
-        <img bind:this={preview} on:load={() => URL.revokeObjectURL(preview.src)} alt="{isLoading?'Loading...':'ERROR'}" class="preview" style="opacity: {isLoading?0.2:1}">
-    </div>
-    <div class="panel">
-        <div class="week">
-            <label for="week_forward"><h3>week_forward</h3></label>
-            <input type="number" name="week_forward" min="-10" max="10" bind:value={week_forward}>
-        </div>
-        <div class="text">
-            <label for="fr_name"><h3>Текст</h3></label>
-            <textarea name="fr_name" bind:value={friday_text}></textarea>
-        </div>
-        <div class="photo">
-			<h3>Фото</h3>
+<Container xxl>
+<Row>
+<Col class="col-lg-6" style="width:660px">
+	<Container md >
+	<div>
+		<img bind:this={preview} on:load={() => URL.revokeObjectURL(preview.src)} alt="{isLoading?'Loading...':'ERROR'}" class="preview" style="opacity: {isLoading?0.2:1}">
+	</div>
+	</Container>
+</Col>
+<Col class="col-lg-6">
+	<Container lg style="max-width:660px">
+		<Container fluid class="mb-2">
+			<Row class="align-items-center">
+				<Col align="center">
+					<Button outline secondary size="md" class="w-75" on:click={prevWeek}>-1</Button>
+				</Col>
+				<Col align="center" class="col-5">
+					WEEK_FORWARD = {$currentWeekNum}
+				</Col>
+				<Col align="center">
+					<Button outline secondary size="md" class="w-75" on:click={nextWeek}>+1</Button>
+				</Col>
+			</Row>
+			<Row>
+				<Col align="center">
+					<Button size="md" color="danger" on:click="{() => reloadWeek($currentWeekNum)}">reset week</Button>
+				</Col>
+			</Row>
+		</Container>
+			
 
-			<label for="fr_photo_url">URL или вставить фото</label>
-			<input type="url" name="fr_photo_url" class="url_input" bind:this={url_input} on:change={UpdateURL}>
-
-            <label for="fr_photo_url">Файл</label>
-			<input class="file_input" type="file" accept="image/*" name="fr_photo_file" bind:this={file_input} on:change={UpdateFile}>
-			<img class="img_prev" alt="файл" bind:this={img_prev} hidden>
-            <button class="delete" on:click={() => {file_input.value = ""; UpdateFile()}}>Удалить файл</button>
-        </div>
-        <button class="submit" disabled={isLoading} on:click={() => UpdatePreview(params)}>Сабмит</button>
-		<button class="copy" on:click={Copy}>Скопировать png</button>
-    </div>
+			<Sems></Sems>
+			<Container fluid class="mt-2">
+				<Row>
+					<Col align="center">
+						<Button size="lg" color="success" on:click={createSeminar}>+</Button>
+					</Col>
+				</Row>
+			</Container>
+			<Container fluid class="mt-2">
+				<Row>
+					<Col align="center">
+						<Button size="lg" color="info" on:click={previewReload}>Сабмит</Button>
+					</Col>
+				</Row>
+			</Container>
+	</Container>
+</Col>
+</Row>
+</Container>
 </div>
 
 <style>
@@ -143,57 +180,17 @@ async function Copy () {
 		font-family: Muller, "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 	}
 	.preview {
-		min-width: 660px;
+		width: 660px;
 	}
     .panel {
-        min-width: 300px;
-		max-width: 630px;
         padding: 10px;
+
     }
 	img {
 		margin: auto;
 	}
-    .week {
-        margin-bottom: 10px;
-    }
-    .text {
-        margin-bottom: 10px;
-    }
-    textarea {
-        width: 100%;
-        min-height: 200px;
-    }
-	.file_input {
+	.sem {
 		width: 100%;
-	}
-	.url_input {
-		width: 100%;
-	}
-	.url_input:invalid {
-		background-color: red;
-	}
-	.url_input:valid {
-		background-color: white;
-	}
-	.img_prev{
-		height: 50px;
-	}
-    .photo {
-        margin-bottom: 10px;
-    }
-	.delete {
-		background-color: #E84D3C;
-		color:black;
-	}
-	.submit {
-		background-color: #2FCE73;
-		color:black;
-	}
-	.submit:disabled {
-		background-color: #E84D3C;
-		color:black;
-	}
-	.copy {
-		color:black;
+		margin-bottom:20px
 	}
 </style>

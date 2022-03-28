@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 import pathlib
 import aiohttp_jinja2
@@ -17,23 +18,20 @@ routes.static('/app', PATH_SVELTE)
 
 def from_data(data: dict, request: web.Request) -> web.Response:
     file_type = data.get('type')
-    week_forward = data.get('week_forward')
-    if not isinstance(week_forward, int) and week_forward is not None:
-        return web.Response(status=400)
-    extra_seminar = data.get('extra_seminar')
-    friday_seminar = Seminar(**extra_seminar) if isinstance(extra_seminar, dict) else Seminar()
+    seminars_ = data.get('seminars')
+    seminars_to_render = []
+    if seminars_ is not None:
+        seminars_to_render = []
+        for s in seminars_:
+            if s.get('datetime') is not  None:
+                s['datetime'] = dt.datetime.strptime(s['datetime'], '%Y-%m-%d %H:%M:%S')
+            seminars_to_render.append(Seminar(**s))
 
     try:
-        seminars = get_seminars(week_forward)
+        html = render_html(seminars=seminars_to_render)
     except Exception as e:
         logging.error(e)
-        seminars = []
-
-    try:
-        html = render_html(seminars=seminars, friday_seminar=friday_seminar)
-    except Exception as e:
-        logging.error(e)
-        html = render_html(seminars=seminars, friday_seminar=Seminar())
+        html = render_html(seminars=[])
 
     if file_type == 'png':
         try:
@@ -74,6 +72,11 @@ async def render(request: web.Request) -> web.Response:
     except JSONDecodeError:
         return web.Response(status=400)
     return from_data(data, request)
+
+
+@routes.get('/seminars')
+async def seminars(request: web.Request) -> web.Response:
+    return web.json_response(get_seminars())
 
 
 @routes.get('/')

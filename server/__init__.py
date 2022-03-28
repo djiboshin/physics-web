@@ -9,7 +9,7 @@ import sys
 PATH = pathlib.Path(__file__).parent
 
 handler = logging.StreamHandler(sys.stdout)
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+logging.basicConfig(level=logging.INFO, handlers=[handler], format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = web.Application()
 app.add_routes(routes)

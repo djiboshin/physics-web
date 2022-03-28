@@ -1,3 +1,5 @@
+import dataclasses
+
 import bs4
 import requests
 from bs4 import BeautifulSoup
@@ -22,10 +24,10 @@ color_table = {
     "General seminar": "#008b6c",
     "Evening seminar": "#022950"
 }
-text_color_table = {
-    "Optical seminar": "white",
-    "General seminar": "white",
-    "Evening seminar": "white"
+date_text_color_table = {
+    "Optical seminar": "#FFFFFF",
+    "General seminar": "#FFFFFF",
+    "Evening seminar": "#FFFFFF"
 }
 
 PATH_TEMPLATES = pathlib.Path(__file__).parent.joinpath('templates')
@@ -45,8 +47,15 @@ class Seminar:
     datetime: dt.datetime = None
     photo_src: str = None
     date_color: str = "#e9ad56"
-    background_color: str = "white"
+    date_text_color: str = "black"
+    background_color: str = "#FFFFFF"
     text_color: str = "black"
+    is_special: bool = False
+
+    def prep_json(self):
+        d = dataclasses.asdict(self)
+        d['datetime'] = str(d['datetime']) if d['datetime'] is not None else None
+        return d
 
 
 def text_or_none(tag: bs4.Tag or None):
@@ -60,7 +69,7 @@ def img_to_base64(url: str):
     return f"data:{r.headers['Content-Type']};base64,{base64.b64encode(r.content).decode('utf-8')}"
 
 
-def get_seminars(week_forward: int or None = 0):
+def get_seminars(week_forward: int or None = None):
     S = requests.Session()
     r = S.get(urljoin(HOST, '/en/seminars'))
     soup = BeautifulSoup(r.text, features="html.parser")
@@ -75,8 +84,8 @@ def get_seminars(week_forward: int or None = 0):
 
         if seminar.type in color_table.keys():
             seminar.date_color = color_table[seminar.type]
-        if seminar.type in text_color_table.keys():
-            seminar.text_color = text_color_table[seminar.type]
+        if seminar.type in date_text_color_table.keys():
+            seminar.date_text_color = date_text_color_table[seminar.type]
 
         date = text_or_none(div.find('div', class_='dte'))
         time = text_or_none(div.find('div', class_='tme'))
@@ -84,17 +93,19 @@ def get_seminars(week_forward: int or None = 0):
             seminar.datetime = dt.datetime.strptime(f'{date} {time}', '%d %B %Y %H:%M')
 
         img = div.find('img', class_='img-responsive')
-        seminar.photo_src = img_to_base64(urljoin(HOST, img.get('src'))) if img is not None else None
+        seminar.photo_src = urljoin(HOST, img.get('src')) if img is not None else None
 
         delta_weeks = int(seminar.datetime.strftime('%W')) - int(dt.datetime.now().strftime('%W'))
         if delta_weeks == week_forward or week_forward is None:
             seminars.append(seminar)
-    return sorted(seminars, key=lambda x: x.datetime)
+
+    seminars_sorted = sorted(seminars, key=lambda x: x.datetime)
+    return [s.prep_json() for s in seminars_sorted]
 
 
-def render_html(seminars: list, friday_seminar: Seminar):
+def render_html(seminars: list):
     template = env.get_template('table.html')
-    return template.render(seminars=seminars, friday_seminar=friday_seminar)
+    return template.render(seminars=seminars)
 
 
 def html_to_png(html: str):
