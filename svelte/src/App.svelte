@@ -40,7 +40,9 @@ async function reloadWeek(weekNum) {
 	await clearWeek(weekNum)
 	let res = await getSeminars()
 	res.forEach(seminar => {
-		let week_forward = Math.floor((new Date(seminar.datetime) - nowDate ) / (7*24*3600*1000))+1
+		let currentWeek = Math.floor((nowDate / (7*24*3600*1000) + 3/7))
+		let seminarWeek = Math.floor((new Date(seminar.datetime)) / (7*24*3600*1000) + 3/7)
+		let week_forward = seminarWeek - currentWeek
 		if (week_forward == weekNum) {
 			addSeminar(seminar, week_forward)
 		}
@@ -69,7 +71,9 @@ function previewReload() {
 onMount (async () => {
 	let res = await getSeminars()
 	res.forEach(seminar => {
-		let week_forward = Math.floor((new Date(seminar.datetime) - nowDate ) / (7*24*3600*1000))+1
+		let currentWeek = Math.floor((nowDate / (7*24*3600*1000) + 3/7))
+		let seminarWeek = Math.floor((new Date(seminar.datetime)) / (7*24*3600*1000) + 3/7)
+		let week_forward = seminarWeek - currentWeek
 		addSeminar(seminar, week_forward)
 	});
 	previewReload()
