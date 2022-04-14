@@ -9,7 +9,7 @@
     {% endif %}
     <div class="info" style="{{'' if seminar.photo_src is not none else 'width:100%;float:none;'}}">
         {% if (seminar.speaker_name is not none) or (seminar.datetime is not none) %}
-        <div class="text-box">
+        <div class="text-box" style="{{'text-align: center;-webkit-box-pack:center;' if seminar.is_special  else ''}}">
             {% if seminar.speaker_name is not none and seminar.speaker_name != "" %}
             <div class="speaker-name" style="color:{{seminar.text_color}};">
                 {{seminar.speaker_name}}
@@ -32,11 +32,9 @@
         {% endif %}
 
         {% if seminar.is_special %}
-        <div class="name" style="color:{{seminar.text_color}};margin: 0 auto;white-space: pre;text-align: center;padding-top:10px">{{seminar.name}}</div>
+        <div class="name" style="color:{{seminar.text_color}};margin: 0 auto;white-space: pre;text-align: center;padding-top:10px">{{seminar.name|safe}}</div>
         {% else %}
-        <div class="name" style="color:{{seminar.text_color}};">
-            {{seminar.name}}
-        </div>
+        <div class="name" style="color:{{seminar.text_color}};">{{seminar.name}}</div>
         {% endif %}
     </div>
 </div>
